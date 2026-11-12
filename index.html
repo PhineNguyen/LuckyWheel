@@ -1,0 +1,305 @@
+<!doctype html>
+
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="#143783" name="theme-color" />
+    <meta
+      content="Vòng quay may mắn Vietop - Học IELTS nhận quà hấp dẫn."
+      name="description"
+    />
+    <title>Vòng quay may mắn | Vietop English</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&amp;family=Nunito:wght@400;500;600;700;800;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link href="./style.css" rel="stylesheet" />
+    <script
+      defer=""
+      src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"
+    ></script>
+    <script
+      defer=""
+      src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+    ></script>
+    <script defer="" src="./app.js"></script>
+  </head>
+  <body>
+    <!-- Phần nền giả lập trang Vietop: có thể xóa khi tích hợp modal vào website thật. -->
+    <div aria-hidden="true" class="site-preview">
+      <header class="site-header">
+        <div class="site-wordmark">Vietop</div>
+        <div class="site-links">
+          <span>Khóa học</span><span>Lịch khai giảng</span
+          ><span>Test trình độ</span><span>Kiến thức IELTS</span
+          ><span>Về Vietop</span>
+        </div>
+        <span class="site-cta">Tư vấn ngay</span>
+      </header>
+      <div class="site-promo">
+        <p>VIETOP ENGLISH</p>
+        <h2>Học IELTS bài bản<br />vững vàng tương lai</h2>
+        <span>Học là phải dùng được</span>
+      </div>
+    </div>
+    <button
+      aria-label="Mở vòng quay may mắn"
+      class="reopen-button"
+      id="openModal"
+      type="button"
+    >
+      🎁 Mở vòng quay may mắn
+    </button>
+    <div class="backdrop" id="backdrop"></div>
+    <main
+      aria-label="Vòng quay may mắn Vietop"
+      aria-modal="true"
+      class="modal"
+      id="modal"
+      role="dialog"
+    >
+      <div class="modal-surface">
+        <div class="bg-blob bg-blob-one"></div>
+        <div class="bg-blob bg-blob-two"></div>
+        <div class="star star-one">✦</div>
+        <div class="star star-two">✦</div>
+        <!-- TRANG VÒNG QUAY -->
+        <section class="view view-wheel" id="viewWheel">
+          <header class="modal-topbar">
+            <div class="top-actions">
+              <span class="season-tag">DUY NHẤT THÁNG 11</span>
+              <button
+                aria-label="Cài đặt vòng quay"
+                class="icon-button settings-button"
+                id="toConfig"
+                title="Cấu hình vòng quay"
+                type="button"
+              >
+                ⚙
+              </button>
+              <button
+                aria-label="Đóng vòng quay"
+                class="icon-button close-button"
+                id="closeModal"
+                title="Đóng"
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+          </header>
+          <div class="main-grid">
+            <div class="content-column">
+              <div class="eyebrow">
+                <span class="eyebrow-sparkle">✦</span> HỌC IELTS NHẬN QUÀ KHỦNG
+                <span class="eyebrow-sparkle">✦</span>
+              </div>
+              <div class="headline-area">
+                <span aria-hidden="true" class="gift-emoji">🎁</span>
+                <h1>
+                  <span class="headline-first">Vòng quay</span
+                  ><span class="headline-second">may mắn</span>
+                </h1>
+                <span aria-hidden="true" class="rays rays-first">✧</span>
+              </div>
+              <p class="intro">
+                Quay ngay để nhận những phần quà<br class="desktop-break" />
+                học tập hấp dẫn từ <strong>Vietop!</strong>
+              </p>
+              <div aria-hidden="true" class="underline-swoosh"></div>
+
+              <div class="player-controls">
+                <label class="player-label" for="player"
+                  >Tên người tham gia <span>(không bắt buộc)</span></label
+                >
+                <div class="input-shell">
+                  <span aria-hidden="true">👤</span
+                  ><input
+                    autocomplete="name"
+                    id="player"
+                    maxlength="80"
+                    name="player"
+                    placeholder="Nhập tên của bạn..."
+                    type="text"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="wheel-column">
+              <div class="wheel-shell">
+                <span aria-hidden="true" class="wheel-sparkle spark-a">✦</span>
+                <span aria-hidden="true" class="wheel-sparkle spark-b">✧</span>
+                <div
+                  aria-label="Vòng quay giải thưởng, có thể nhấn vào vòng quay hoặc nút Quay ngay"
+                  class="game"
+                  id="game"
+                ></div>
+              </div>
+              <div class="wheel-controls">
+                <button class="spin-button" id="spinButton" type="button">
+                  <span aria-hidden="true" class="spin-symbol">⟳</span> Quay
+                  ngay
+                </button>
+                <p class="demo-note">
+                  <span aria-hidden="true" class="info-dot">i</span> Bản trải
+                  nghiệm chưa giới hạn số lượt quay
+                </p>
+                <p aria-live="polite" class="status" role="status"></p>
+                <div
+                  aria-live="polite"
+                  class="result-card hidden"
+                  id="resultCard"
+                >
+                  <span aria-hidden="true" class="result-icon">🎉</span>
+                  <div>
+                    <strong>Kết quả lượt quay</strong
+                    ><span id="resultName"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <aside aria-label="Bảng trúng thưởng" class="winners-column">
+              <div class="winners-aside-header">
+                <span class="winners-eyebrow">KẾT QUẢ VÒNG QUAY</span>
+                <p class="winners-intro">Các lượt quay vừa thực hiện</p>
+              </div>
+              <section
+                aria-label="Danh sách người trúng thưởng"
+                class="winners"
+                id="winners"
+              >
+                <div class="winners-head">
+                  <strong
+                    >🏆 Danh sách trúng thưởng
+                    <span class="winners-count" id="winnersCount"
+                      >0</span
+                    ></strong
+                  >
+                  <div class="winners-actions">
+                    <button class="export-btn" id="exportBtn" type="button">
+                      ⬇ Xuất Excel
+                    </button>
+                    <button
+                      class="clear-btn"
+                      id="clearBtn"
+                      title="Xoá toàn bộ danh sách"
+                      type="button"
+                    >
+                      Xoá
+                    </button>
+                  </div>
+                </div>
+                <ol class="history-list" id="log" reversed=""></ol>
+              </section>
+              <p class="winners-note">
+                Lịch sử được lưu trên trình duyệt này. Bạn có thể xuất Excel bất
+                kỳ lúc nào.
+              </p>
+            </aside>
+          </div>
+          <div aria-hidden="true" class="bottom-wave"></div>
+          <footer class="wheel-footer">
+            <span class="footer-brand">VIETOP — HỌC LÀ PHẢI DÙNG ĐƯỢC</span>
+          </footer>
+        </section>
+        <!-- TRANG QUẢN TRỊ / CẤU HÌNH -->
+        <section
+          aria-labelledby="panelTitle"
+          class="view view-panel hidden"
+          id="viewPanel"
+        >
+          <header class="panel-header">
+            <button class="back-button" id="toWheel" type="button">
+              <span aria-hidden="true">←</span> Về vòng quay
+            </button>
+          </header>
+          <div class="panel-body">
+            <div class="panel-heading">
+              <span class="panel-kicker">QUẢN LÝ CHƯƠNG TRÌNH</span>
+              <h2 id="panelTitle">Cấu hình vòng quay</h2>
+              <p>
+                Chỉnh tên phần thưởng và trọng số xác suất. Mọi thay đổi được
+                lưu trên trình duyệt này.
+              </p>
+            </div>
+            <div class="panel-grid">
+              <div class="panel-card prizes-card">
+                <div class="card-head">
+                  <h3>Danh sách phần thưởng</h3>
+                  <button class="btn-soft" id="add" type="button">
+                    + Thêm ô
+                  </button>
+                </div>
+                <p class="form-help">
+                  Trọng số càng cao, khả năng trúng càng lớn. Mỗi ô có cùng diện
+                  tích hiển thị, bất kể trọng số.
+                </p>
+                <div class="table-scroll">
+                  <table class="prizes-table">
+                    <thead>
+                      <tr>
+                        <th>Phần thưởng</th>
+                        <th>Trọng số</th>
+                        <th>Tỷ lệ</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="rows"></tbody>
+                  </table>
+                </div>
+                <div class="table-notice">
+                  * Tỷ lệ tự động tính theo tổng trọng số của tất cả các ô.
+                </div>
+              </div>
+              <div class="panel-side">
+                <div class="panel-card">
+                  <h3>Hiển thị trên vòng quay</h3>
+                  <label class="toggle-line" for="optLabels"
+                    ><span>Hiện tên phần thưởng</span
+                    ><input checked="" id="optLabels" type="checkbox" /><span
+                      aria-hidden="true"
+                      class="fake-switch"
+                    ></span></label
+                  ><label class="toggle-line" for="optPct"
+                    ><span>Hiện tỷ lệ % trên ô</span
+                    ><input id="optPct" type="checkbox" /><span
+                      aria-hidden="true"
+                      class="fake-switch"
+                    ></span
+                  ></label>
+                </div>
+                <div class="panel-card">
+                  <h3>Kết quả &amp; xuất Excel</h3>
+                  <p class="form-help" style="margin-bottom: 0">
+                    Danh sách trúng thưởng nằm bên phải vòng quay, luôn hiển thị
+                    số lượt đã quay và cho phép xuất Excel.
+                  </p>
+                </div>
+                <div class="panel-card note-card">
+                  <h3>🔒 Lưu ý khi triển khai thật</h3>
+                  <p>
+                    Trọng số và số lượt quay hiện xử lý trong trình duyệt; có
+                    thể bị thay đổi bởi người dùng. Với quà tặng có giá trị, nên
+                    xác định giải và giới hạn lượt quay ở máy chủ.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <button class="btn-outline" id="reset" type="button">
+                Khôi phục mặc định</button
+              ><span aria-live="polite" class="status" role="status"></span
+              ><button class="btn-soft" id="apply" type="button">Áp dụng</button
+              ><button class="btn-primary" id="applyBack" type="button">
+                Lưu &amp; xem vòng quay
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

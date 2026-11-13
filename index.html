@@ -31,7 +31,7 @@
     <!-- Phần nền giả lập trang Vietop: có thể xóa khi tích hợp modal vào website thật. -->
     <div aria-hidden="true" class="site-preview">
       <header class="site-header">
-        <div class="site-wordmark">Vietop</div>
+        <img class="site-wordmark" src="./Logo.png" alt="Vietop" />
         <div class="site-links">
           <span>Khóa học</span><span>Lịch khai giảng</span
           ><span>Test trình độ</span><span>Kiến thức IELTS</span
@@ -133,7 +133,7 @@
                 <span aria-hidden="true" class="wheel-sparkle spark-a">✦</span>
                 <span aria-hidden="true" class="wheel-sparkle spark-b">✧</span>
                 <div
-                  aria-label="Vòng quay giải thưởng, có thể nhấn vào vòng quay hoặc nút Quay ngay"
+                  aria-label="Vòng quay giải thưởng. Nhấn nút Quay ngay để bắt đầu."
                   class="game"
                   id="game"
                 ></div>
@@ -214,6 +214,9 @@
           <header class="panel-header">
             <button class="back-button" id="toWheel" type="button">
               <span aria-hidden="true">←</span> Về vòng quay
+            </button>
+            <button class="btn-outline" id="adminLogout" type="button">
+              🔒 Khoá cài đặt
             </button>
           </header>
           <div class="panel-body">
@@ -301,5 +304,32 @@
         </section>
       </div>
     </main>
+
+    <!-- Hộp nhập mật khẩu quản trị (chỉ hiện khi mở #admin) -->
+    <div
+      aria-labelledby="adminLoginTitle"
+      aria-modal="true"
+      class="admin-login hidden"
+      id="adminLogin"
+      role="dialog"
+    >
+      <form autocomplete="off" class="admin-login-box" id="adminLoginForm">
+        <h3 id="adminLoginTitle">🔒 Khu vực quản trị</h3>
+        <p>Nhập mật khẩu để mở cài đặt vòng quay.</p>
+        <input
+          autocomplete="current-password"
+          id="adminPassword"
+          placeholder="Mật khẩu quản trị"
+          type="password"
+        />
+        <p class="admin-login-error" id="adminLoginError" role="alert"></p>
+        <div class="admin-login-actions">
+          <button class="btn-outline" id="adminCancel" type="button">
+            Huỷ
+          </button>
+          <button class="btn-primary" type="submit">Mở cài đặt</button>
+        </div>
+      </form>
+    </div>
   </body>
 </html>

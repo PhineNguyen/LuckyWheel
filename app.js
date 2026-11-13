@@ -237,6 +237,12 @@ function refreshGameLayout() {
 }
 
 function showView(name) {
+  // Chưa đăng nhập quản trị thì không cho vào trang cấu hình
+  if (name === "config" && !isAdmin()) {
+    openAdminLogin();
+    name = "wheel";
+  }
+
   var config = name === "config";
 
   var wheelView = document.getElementById("viewWheel");
@@ -262,7 +268,14 @@ function showView(name) {
 }
 
 function viewFromHash() {
-  var config = location.hash === "#config";
+  var wantsAdmin = location.hash === "#config" || location.hash === "#admin";
+
+  if (wantsAdmin && !isAdmin()) {
+    openAdminLogin();
+    wantsAdmin = false;
+  }
+
+  var config = wantsAdmin;
 
   document.getElementById("viewWheel").classList.toggle("hidden", config);
 
@@ -442,8 +455,17 @@ function pad2(n) {
 // dd/mm/yyyy hh:mm:ss
 function formatDateTime(d) {
   return (
-    pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear() +
-    " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds())
+    pad2(d.getDate()) +
+    "/" +
+    pad2(d.getMonth() + 1) +
+    "/" +
+    d.getFullYear() +
+    " " +
+    pad2(d.getHours()) +
+    ":" +
+    pad2(d.getMinutes()) +
+    ":" +
+    pad2(d.getSeconds())
   );
 }
 
@@ -451,10 +473,20 @@ function formatDateTime(d) {
 function renderResults() {
   var box = document.getElementById("winners");
   var log = document.getElementById("log");
+  var hasResults = results.length > 0;
 
   log.textContent = "";
-  box.classList.toggle("hidden", results.length === 0);
   document.getElementById("winnersCount").textContent = results.length;
+  document.getElementById("exportBtn").disabled = !hasResults;
+  document.getElementById("clearBtn").disabled = !hasResults;
+
+  if (!hasResults) {
+    var empty = document.createElement("li");
+    empty.className = "winners-empty";
+    empty.textContent = "Chưa có lượt quay nào. Kết quả sẽ xuất hiện tại đây.";
+    log.appendChild(empty);
+    return;
+  }
 
   for (var i = results.length - 1; i >= 0; i--) {
     var r = results[i];
@@ -509,8 +541,12 @@ function exportResults() {
 
   var now = new Date();
   var stamp =
-    now.getFullYear() + pad2(now.getMonth() + 1) + pad2(now.getDate()) +
-    "-" + pad2(now.getHours()) + pad2(now.getMinutes());
+    now.getFullYear() +
+    pad2(now.getMonth() + 1) +
+    pad2(now.getDate()) +
+    "-" +
+    pad2(now.getHours()) +
+    pad2(now.getMinutes());
 
   var rows = [["STT", "Thời gian", "Tên người chơi", "Phần thưởng"]];
 
@@ -536,22 +572,32 @@ function exportResults() {
   }
 
   // Dự phòng khi không tải được thư viện (mất mạng): xuất CSV, Excel vẫn mở được.
-  var csv = "\uFEFF" + rows.map(function (row) {
-    return row.map(csvCell).join(",");
-  }).join("\r\n");
+  var csv =
+    "\uFEFF" +
+    rows
+      .map(function (row) {
+        return row.map(csvCell).join(",");
+      })
+      .join("\r\n");
 
   var csvName = "ket-qua-vong-quay-vietop-" + stamp + ".csv";
 
   downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), csvName);
 
-  setStatus("Không tải được thư viện Excel nên đã xuất " + csvName + " (mở bằng Excel được).");
+  setStatus(
+    "Không tải được thư viện Excel nên đã xuất " +
+      csvName +
+      " (mở bằng Excel được).",
+  );
 }
 
 function clearResults() {
   if (results.length === 0) return;
 
   var ok = window.confirm(
-    "Xoá toàn bộ " + results.length + " kết quả? Hãy xuất Excel trước nếu cần lưu lại.",
+    "Xoá toàn bộ " +
+      results.length +
+      " kết quả? Hãy xuất Excel trước nếu cần lưu lại.",
   );
 
   if (!ok) return;
@@ -572,7 +618,7 @@ class PlayGame extends Phaser.Scene {
   }
 
   preload() {
-    // Không dùng ảnh logo bên ngoài để có thể chạy ngay khi mở index.html.
+    this.load.image("vietop-logo", "./Logo.png");
   }
 
   create() {
@@ -590,14 +636,14 @@ class PlayGame extends Phaser.Scene {
     // Kim chỉ
     this.drawPointer();
 
-    // Wordmark Vietop bằng chữ, không phụ thuộc logo.png bên ngoài.
-    wheelLogo = this.add.text(WHEEL_CX, WHEEL_CY, "Vietop", {
-      fontFamily: "Nunito, Arial, sans-serif",
-      fontSize: "27px",
-      fontStyle: "bold italic",
-      color: "#ffffff",
-      align: "center",
-    }).setOrigin(0.5).setDepth(20);
+    wheelLogo = this.add
+      .image(WHEEL_CX, WHEEL_CY, "vietop-logo")
+      .setDisplaySize(88, 88)
+      .setDepth(20);
+
+    var logoMaskShape = this.make.graphics({ x: 0, y: 0, add: false });
+    logoMaskShape.fillCircle(WHEEL_CX, WHEEL_CY, 44);
+    wheelLogo.setMask(logoMaskShape.createGeometryMask());
 
     // Hiển thị kết quả
     prizeText = this.add
@@ -615,7 +661,7 @@ class PlayGame extends Phaser.Scene {
 
     // Hướng dẫn
     this.add
-      .text(WHEEL_CX, 582, "CHẠM VÀO VÒNG QUAY HOẶC NHẤN QUAY NGAY", {
+      .text(WHEEL_CX, 582, "NHẤN NÚT QUAY NGAY ĐỂ BẮT ĐẦU", {
         fontFamily: "Arial",
         fontSize: "13px",
         fontStyle: "bold",
@@ -627,9 +673,6 @@ class PlayGame extends Phaser.Scene {
     refreshWheel();
 
     canSpin = true;
-
-    // Bắt sự kiện click
-    this.input.on("pointerdown", this.spin, this);
   }
 
   // ---------------------------------------------------
@@ -705,20 +748,17 @@ class PlayGame extends Phaser.Scene {
       }
 
       var pastelColors = [
-        0xffe6a5, 0xd5eaff, 0xfffbef, 0xcce5ff,
-        0xffe7ad, 0xd6eafe, 0xfffaf1, 0xcfe6ff,
+        0xffe6a5, 0xd5eaff, 0xfffbef, 0xcce5ff, 0xffe7ad, 0xd6eafe, 0xfffaf1,
+        0xcfe6ff,
       ];
-      var sliceColor = count === 8 ? pastelColors[i] : (i % 2 === 0 ? 0xd7eaff : 0xfff7e7);
+      var sliceColor =
+        count === 8 ? pastelColors[i] : i % 2 === 0 ? 0xd7eaff : 0xfff7e7;
       wheelGraphics.fillStyle(sliceColor, 1);
 
       wheelGraphics.fillPoints(points, true);
 
       // Đường phân cách
-      wheelGraphics.lineStyle(
-        3,
-        0xffffff,
-        1,
-      );
+      wheelGraphics.lineStyle(3, 0xffffff, 1);
 
       wheelGraphics.strokePoints(points, true);
     }
@@ -728,20 +768,24 @@ class PlayGame extends Phaser.Scene {
     wheelGraphics.strokeCircle(0, 0, WHEEL_R + 1);
     wheelGraphics.lineStyle(4, 0x5da0ed, 1);
     wheelGraphics.strokeCircle(0, 0, WHEEL_R + 12);
-    wheelGraphics.lineStyle(3, WHEEL_STYLE.white, .9);
+    wheelGraphics.lineStyle(3, WHEEL_STYLE.white, 0.9);
     wheelGraphics.strokeCircle(0, 0, WHEEL_R - 9);
 
     var bulbCount = 28;
     for (var tick = 0; tick < bulbCount; tick++) {
-      var tickAngle = start + tick * Math.PI * 2 / bulbCount;
-      wheelGraphics.fillStyle(0xffe7a6, .35);
+      var tickAngle = start + (tick * Math.PI * 2) / bulbCount;
+      wheelGraphics.fillStyle(0xffe7a6, 0.35);
       wheelGraphics.fillCircle(
         Math.cos(tickAngle) * (WHEEL_R + 1),
-        Math.sin(tickAngle) * (WHEEL_R + 1), 10);
+        Math.sin(tickAngle) * (WHEEL_R + 1),
+        10,
+      );
       wheelGraphics.fillStyle(0xffd34a, 1);
       wheelGraphics.fillCircle(
         Math.cos(tickAngle) * (WHEEL_R + 1),
-        Math.sin(tickAngle) * (WHEEL_R + 1), 5.3);
+        Math.sin(tickAngle) * (WHEEL_R + 1),
+        5.3,
+      );
     }
   }
 
@@ -777,7 +821,7 @@ class PlayGame extends Phaser.Scene {
     // Thêm sai lệch nhỏ để kim không dừng tại cùng một điểm.
     var insideSliceOffset = (Math.random() - 0.5) * sliceAngle * 0.7;
     var targetAngle = currentPrize * sliceAngle + insideSliceOffset;
-    var desiredWheelAngle = ((360 - targetAngle) % 360 + 360) % 360;
+    var desiredWheelAngle = (((360 - targetAngle) % 360) + 360) % 360;
 
     var currentRawAngle = wheel.angle;
     var currentAngle = ((currentRawAngle % 360) + 360) % 360;
@@ -920,18 +964,23 @@ function refreshWheel() {
     // Biểu tượng tặng quà đặt gần vành ngoài của mỗi ô.
     if (count <= 10) {
       var icon = getPrizeIcon(prizes[i].name);
-      var symbol = sceneRef.add.text(
-        Math.cos(middle) * WHEEL_R * 0.84,
-        Math.sin(middle) * WHEEL_R * 0.84,
-        icon,
-        { fontFamily: "Arial, sans-serif", fontSize: count > 8 ? "20px" : "25px", align: "center" }
-      ).setOrigin(0.5);
+      var symbol = sceneRef.add
+        .text(
+          Math.cos(middle) * WHEEL_R * 0.84,
+          Math.sin(middle) * WHEEL_R * 0.84,
+          icon,
+          {
+            fontFamily: "Arial, sans-serif",
+            fontSize: count > 8 ? "20px" : "25px",
+            align: "center",
+          },
+        )
+        .setOrigin(0.5);
       wheel.add(symbol);
       wheelLabels.push(symbol);
     }
   }
 }
-
 
 // Biểu tượng minh họa cho từng loại quà, chỉ ảnh hưởng giao diện.
 function getPrizeIcon(name) {
@@ -940,11 +989,228 @@ function getPrizeIcon(name) {
   if (n.includes("học phí") || n.includes("ưu đãi")) return "🎟️";
   if (n.includes("tài liệu")) return "📚";
   if (n.includes("học thử")) return "🎧";
-  if (n.includes("quà") || n.includes("sổ tay") || n.includes("móc khóa")) return "🎁";
+  if (n.includes("quà") || n.includes("sổ tay") || n.includes("móc khóa"))
+    return "🎁";
   if (n.includes("test") || n.includes("kiểm tra")) return "📋";
   if (n.includes("bộ đề") || n.includes("đề thi")) return "📖";
   if (n.includes("may mắn") || n.includes("trượt")) return "😊";
   return "✨";
+}
+
+// =====================================================
+// QUYỀN QUẢN TRỊ (ẨN NÚT CÀI ĐẶT)
+// =====================================================
+
+// SHA-256 của mật khẩu quản trị. Mật khẩu mặc định là "vietop-admin" — HÃY ĐỔI.
+// Tạo mã mới: mở Console của trình duyệt trên trang này, gõ  sha256Hex("mat-khau-moi")
+// rồi dán kết quả vào đây.
+var ADMIN_HASH =
+  "b1b876afe4e682486915673b4fed7c12cb3d3d7c96997e20e8c095b8c49f9306";
+var ADMIN_SESSION_KEY = "vietopAdminSession";
+var adminFails = 0;
+var adminLockUntil = 0;
+
+var SHA_K = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
+  0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+  0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
+  0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
+  0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+  0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+  0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
+  0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+  0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+];
+
+function rotr32(x, n) {
+  return (x >>> n) | (x << (32 - n));
+}
+
+// SHA-256 viết tay (không phụ thuộc HTTPS như crypto.subtle).
+function sha256Hex(text) {
+  var bytes = Array.prototype.slice.call(new TextEncoder().encode(text));
+  var bitLength = bytes.length * 8;
+
+  bytes.push(0x80);
+
+  while (bytes.length % 64 !== 56) bytes.push(0);
+
+  [Math.floor(bitLength / 0x100000000), bitLength >>> 0].forEach(
+    function (part) {
+      for (var shift = 24; shift >= 0; shift -= 8)
+        bytes.push((part >>> shift) & 255);
+    },
+  );
+
+  var h = [
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c,
+    0x1f83d9ab, 0x5be0cd19,
+  ];
+  var w = new Array(64);
+
+  for (var offset = 0; offset < bytes.length; offset += 64) {
+    var i;
+
+    for (i = 0; i < 16; i++) {
+      w[i] =
+        ((bytes[offset + 4 * i] << 24) |
+          (bytes[offset + 4 * i + 1] << 16) |
+          (bytes[offset + 4 * i + 2] << 8) |
+          bytes[offset + 4 * i + 3]) >>>
+        0;
+    }
+
+    for (i = 16; i < 64; i++) {
+      var s0 = rotr32(w[i - 15], 7) ^ rotr32(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+      var s1 = rotr32(w[i - 2], 17) ^ rotr32(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+    }
+
+    var a = h[0],
+      b = h[1],
+      c = h[2],
+      d = h[3],
+      e = h[4],
+      f = h[5],
+      g = h[6],
+      k = h[7];
+
+    for (i = 0; i < 64; i++) {
+      var S1 = rotr32(e, 6) ^ rotr32(e, 11) ^ rotr32(e, 25);
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (k + S1 + ch + SHA_K[i] + w[i]) >>> 0;
+      var S0 = rotr32(a, 2) ^ rotr32(a, 13) ^ rotr32(a, 22);
+      var maj = (a & b) ^ (a & c) ^ (b & c);
+      var t2 = (S0 + maj) >>> 0;
+
+      k = g;
+      g = f;
+      f = e;
+      e = (d + t1) >>> 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (t1 + t2) >>> 0;
+    }
+
+    h[0] = (h[0] + a) >>> 0;
+    h[1] = (h[1] + b) >>> 0;
+    h[2] = (h[2] + c) >>> 0;
+    h[3] = (h[3] + d) >>> 0;
+    h[4] = (h[4] + e) >>> 0;
+    h[5] = (h[5] + f) >>> 0;
+    h[6] = (h[6] + g) >>> 0;
+    h[7] = (h[7] + k) >>> 0;
+  }
+
+  return h
+    .map(function (x) {
+      return ("00000000" + x.toString(16)).slice(-8);
+    })
+    .join("");
+}
+
+function isAdmin() {
+  try {
+    return sessionStorage.getItem(ADMIN_SESSION_KEY) === "1";
+  } catch (error) {
+    return false;
+  }
+}
+
+// Nút ⚙ chỉ hiện khi đã đăng nhập quản trị
+function applyAdminUI() {
+  document.getElementById("toConfig").classList.toggle("hidden", !isAdmin());
+}
+
+function openAdminLogin() {
+  document.getElementById("adminLogin").classList.remove("hidden");
+  document.getElementById("adminLoginError").textContent = "";
+  document.getElementById("adminPassword").value = "";
+  setTimeout(function () {
+    document.getElementById("adminPassword").focus();
+  }, 0);
+}
+
+function closeAdminLogin() {
+  document.getElementById("adminLogin").classList.add("hidden");
+
+  if (location.hash === "#admin" || location.hash === "#config") {
+    history.replaceState(null, "", "#wheel");
+  }
+}
+
+function submitAdminLogin() {
+  var error = document.getElementById("adminLoginError");
+  var wait = Math.ceil((adminLockUntil - Date.now()) / 1000);
+
+  if (wait > 0) {
+    error.textContent = "Nhập sai nhiều lần. Thử lại sau " + wait + " giây.";
+    return;
+  }
+
+  var typed = document.getElementById("adminPassword").value;
+
+  if (sha256Hex(typed) === ADMIN_HASH) {
+    adminFails = 0;
+
+    try {
+      sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+    } catch (e) {}
+
+    document.getElementById("adminLogin").classList.add("hidden");
+    applyAdminUI();
+    showView("config");
+    return;
+  }
+
+  adminFails++;
+  document.getElementById("adminPassword").value = "";
+
+  if (adminFails >= 5) {
+    adminFails = 0;
+    adminLockUntil = Date.now() + 30000;
+    error.textContent = "Nhập sai 5 lần. Vui lòng thử lại sau 30 giây.";
+  } else {
+    error.textContent = "Mật khẩu không đúng.";
+  }
+}
+
+function logoutAdmin() {
+  try {
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  } catch (e) {}
+
+  applyAdminUI();
+  showView("wheel");
+}
+
+function bindAdmin() {
+  document
+    .getElementById("adminLoginForm")
+    .addEventListener("submit", function (event) {
+      event.preventDefault();
+      submitAdminLogin();
+    });
+
+  document
+    .getElementById("adminCancel")
+    .addEventListener("click", closeAdminLogin);
+  document.getElementById("adminLogout").addEventListener("click", logoutAdmin);
+
+  document.addEventListener("keydown", function (event) {
+    if (
+      event.key === "Escape" &&
+      !document.getElementById("adminLogin").classList.contains("hidden")
+    ) {
+      closeAdminLogin();
+    }
+  });
+
+  applyAdminUI();
 }
 
 // =====================================================
@@ -964,6 +1230,8 @@ window.addEventListener("load", function () {
   renderRows();
 
   bindPanel();
+
+  bindAdmin();
 
   // Điều khiển ngoài canvas, như giao diện thiết kế.
   document.getElementById("spinButton").addEventListener("click", function () {
